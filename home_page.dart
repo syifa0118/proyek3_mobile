@@ -124,7 +124,7 @@ class HomePage extends StatelessWidget {
           const Text(
             "Kami menawarkan berbagai layanan berkualitas tinggi untuk menjaga kesehatan dan kebahagiaan hewan peliharaan Anda.",
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey),
+            style: TextStyle(color: Colors.white),
           ),
           const SizedBox(height: 40),
 
