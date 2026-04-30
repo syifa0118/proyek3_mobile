@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-// ignore: avoid_web_libraries_in_flutter
 import 'dart:html' as html;
 import 'dart:typed_data';
 
@@ -31,11 +30,14 @@ class _ProfilePageState extends State<ProfilePage> {
   String name = "Your name";
   String email = "example@gmail.com";
   String phone = "+6546-098-098";
-  String address = "Jl. nabilah orang cirebon";
+  String address = "Jl. mawar lentera";
 
-  Uint8List? image; // 🔥 simpan foto
+  Uint8List? image;
 
-  void goToEdit() async {
+  /// 🔥 LIST RIWAYAT
+  List<String> riwayat = [];
+
+  Future<void> goToEdit() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -45,17 +47,23 @@ class _ProfilePageState extends State<ProfilePage> {
           phone: phone,
           address: address,
           image: image,
+          riwayat: riwayat,
         ),
       ),
     );
 
-    if (result != null) {
+    /// 🔥 FIX NULL + TYPE
+    if (result != null && result is Map<String, dynamic>) {
       setState(() {
-        name = result['name'];
-        email = result['email'];
-        phone = result['phone'];
-        address = result['address'];
-        image = result['image']; // 🔥 ambil foto
+        name = result['name'] ?? name;
+        email = result['email'] ?? email;
+        phone = result['phone'] ?? phone;
+        address = result['address'] ?? address;
+        image = result['image'] ?? image;
+
+        if (result['riwayat'] != null) {
+          riwayat = List<String>.from(result['riwayat']);
+        }
       });
     }
   }
@@ -127,10 +135,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
                   const SizedBox(height: 25),
 
-                  /// FOTO PROFILE
+                  /// FOTO
                   Stack(
                     children: [
-
                       CircleAvatar(
                         radius: 55,
                         backgroundColor: Colors.grey[300],
@@ -178,6 +185,16 @@ class _ProfilePageState extends State<ProfilePage> {
                         buildItem(Icons.email, email),
                         buildItem(Icons.phone, phone),
                         buildItem(Icons.location_on, address),
+
+                        /// 🔥 RIWAYAT (SESUAI GAMBAR)
+                        riwayat.isEmpty
+                            ? buildItem(Icons.bathtub, "Riwayat tidak ada")
+                            : Column(
+                                children: riwayat
+                                    .map((item) =>
+                                        buildItem(Icons.bathtub, item))
+                                    .toList(),
+                              ),
                       ],
                     ),
                   ),
@@ -193,6 +210,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 }
 
+
 /// ================= EDIT PROFILE =================
 class EditProfilePage extends StatefulWidget {
 
@@ -201,6 +219,7 @@ class EditProfilePage extends StatefulWidget {
   final String phone;
   final String address;
   final Uint8List? image;
+  final List<String> riwayat;
 
   const EditProfilePage({
     super.key,
@@ -209,6 +228,7 @@ class EditProfilePage extends StatefulWidget {
     required this.phone,
     required this.address,
     this.image,
+    required this.riwayat,
   });
 
   @override
@@ -221,6 +241,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController emailC;
   late TextEditingController phoneC;
   late TextEditingController addressC;
+  late TextEditingController riwayatC;
 
   Uint8List? image;
 
@@ -231,19 +252,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
     emailC = TextEditingController(text: widget.email);
     phoneC = TextEditingController(text: widget.phone);
     addressC = TextEditingController(text: widget.address);
+
+    riwayatC = TextEditingController(
+      text: widget.riwayat.join(", "),
+    );
+
     image = widget.image;
   }
 
-  /// 🔥 PILIH FOTO (WEB)
   void pickImage() {
     final input = html.FileUploadInputElement();
     input.accept = 'image/*';
     input.click();
 
     input.onChange.listen((event) {
-      final file = input.files!.first;
-      final reader = html.FileReader();
+      final file = input.files?.first;
+      if (file == null) return;
 
+      final reader = html.FileReader();
       reader.readAsArrayBuffer(file);
 
       reader.onLoadEnd.listen((event) {
@@ -299,10 +325,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                   const SizedBox(height: 25),
 
-                  /// FOTO
                   Stack(
                     children: [
-
                       CircleAvatar(
                         radius: 55,
                         backgroundColor: Colors.grey[300],
@@ -342,23 +366,30 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         input(emailC, "Email"),
                         input(phoneC, "Telepon"),
                         input(addressC, "Alamat"),
+                        input(riwayatC, "Riwayat (pisahkan koma)"),
 
                         const SizedBox(height: 20),
 
                         ElevatedButton(
                           onPressed: () {
+
+                            List<String> hasilRiwayat = riwayatC.text
+                                .split(",")
+                                .map((e) => e.trim())
+                                .where((e) => e.isNotEmpty)
+                                .toList();
+
                             Navigator.pop(context, {
                               "name": nameC.text,
                               "email": emailC.text,
                               "phone": phoneC.text,
                               "address": addressC.text,
                               "image": image,
+                              "riwayat": hasilRiwayat,
                             });
                           },
                           child: const Text("Simpan"),
                         ),
-
-                        const SizedBox(height: 20),
                       ],
                     ),
                   )
