@@ -1,0 +1,391 @@
+import 'package:flutter/material.dart';
+// ignore: avoid_web_libraries_in_flutter
+import 'dart:html' as html;
+import 'dart:typed_data';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: ProfilePage(),
+    );
+  }
+}
+
+class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key});
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+
+  String name = "Your name";
+  String email = "example@gmail.com";
+  String phone = "+6546-098-098";
+  String address = "Jl. nabilah orang cirebon";
+
+  Uint8List? image; // 🔥 simpan foto
+
+  void goToEdit() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EditProfilePage(
+          name: name,
+          email: email,
+          phone: phone,
+          address: address,
+          image: image,
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        name = result['name'];
+        email = result['email'];
+        phone = result['phone'];
+        address = result['address'];
+        image = result['image']; // 🔥 ambil foto
+      });
+    }
+  }
+
+  Widget buildItem(IconData icon, String text) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: Colors.blue.shade100),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: const Color(0xff1b2a57)),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
+    return Scaffold(
+      backgroundColor: const Color(0xff48618F),
+
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xffF2F4F7),
+              borderRadius: BorderRadius.circular(30),
+            ),
+
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+
+                  const SizedBox(height: 20),
+
+                  /// HEADER
+                  Row(
+                    children: const [
+                      SizedBox(width: 40),
+                      Expanded(
+                        child: Center(
+                          child: Text(
+                            "Profile",
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 40),
+                    ],
+                  ),
+
+                  const SizedBox(height: 25),
+
+                  /// FOTO PROFILE
+                  Stack(
+                    children: [
+
+                      CircleAvatar(
+                        radius: 55,
+                        backgroundColor: Colors.grey[300],
+                        backgroundImage:
+                            image != null ? MemoryImage(image!) : null,
+                        child: image == null
+                            ? const Icon(Icons.person, size: 50)
+                            : null,
+                      ),
+
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: goToEdit,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(
+                              color: Color(0xffB9C3D4),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.edit, size: 16),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 15),
+
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        buildItem(Icons.email, email),
+                        buildItem(Icons.phone, phone),
+                        buildItem(Icons.location_on, address),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// ================= EDIT PROFILE =================
+class EditProfilePage extends StatefulWidget {
+
+  final String name;
+  final String email;
+  final String phone;
+  final String address;
+  final Uint8List? image;
+
+  const EditProfilePage({
+    super.key,
+    required this.name,
+    required this.email,
+    required this.phone,
+    required this.address,
+    this.image,
+  });
+
+  @override
+  State<EditProfilePage> createState() => _EditProfilePageState();
+}
+
+class _EditProfilePageState extends State<EditProfilePage> {
+
+  late TextEditingController nameC;
+  late TextEditingController emailC;
+  late TextEditingController phoneC;
+  late TextEditingController addressC;
+
+  Uint8List? image;
+
+  @override
+  void initState() {
+    super.initState();
+    nameC = TextEditingController(text: widget.name);
+    emailC = TextEditingController(text: widget.email);
+    phoneC = TextEditingController(text: widget.phone);
+    addressC = TextEditingController(text: widget.address);
+    image = widget.image;
+  }
+
+  /// 🔥 PILIH FOTO (WEB)
+  void pickImage() {
+    final input = html.FileUploadInputElement();
+    input.accept = 'image/*';
+    input.click();
+
+    input.onChange.listen((event) {
+      final file = input.files!.first;
+      final reader = html.FileReader();
+
+      reader.readAsArrayBuffer(file);
+
+      reader.onLoadEnd.listen((event) {
+        setState(() {
+          image = reader.result as Uint8List;
+        });
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
+    return Scaffold(
+      backgroundColor: const Color(0xff48618F),
+
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xffF2F4F7),
+              borderRadius: BorderRadius.circular(30),
+            ),
+
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+
+                  const SizedBox(height: 20),
+
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back),
+                      ),
+                      const Expanded(
+                        child: Center(
+                          child: Text(
+                            "Edit Profile",
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 40),
+                    ],
+                  ),
+
+                  const SizedBox(height: 25),
+
+                  /// FOTO
+                  Stack(
+                    children: [
+
+                      CircleAvatar(
+                        radius: 55,
+                        backgroundColor: Colors.grey[300],
+                        backgroundImage:
+                            image != null ? MemoryImage(image!) : null,
+                        child: image == null
+                            ? const Icon(Icons.person, size: 50)
+                            : null,
+                      ),
+
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: pickImage,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(
+                              color: Colors.grey,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.camera_alt),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+
+                        input(nameC, "Nama"),
+                        input(emailC, "Email"),
+                        input(phoneC, "Telepon"),
+                        input(addressC, "Alamat"),
+
+                        const SizedBox(height: 20),
+
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context, {
+                              "name": nameC.text,
+                              "email": emailC.text,
+                              "phone": phoneC.text,
+                              "address": addressC.text,
+                              "image": image,
+                            });
+                          },
+                          child: const Text("Simpan"),
+                        ),
+
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget input(TextEditingController c, String hint) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        controller: c,
+        decoration: InputDecoration(
+          hintText: hint,
+          filled: true,
+          fillColor: Colors.grey[200],
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(25),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    );
+  }
+}
