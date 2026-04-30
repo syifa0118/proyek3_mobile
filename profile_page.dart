@@ -13,7 +13,9 @@ class _ProfilePageState extends State<ProfilePage> {
   String nama = "Your name";
   String email = "example@gmail.com";
   String telp = "+6546-098-098";
-  String alamat = "Jl. nabilah orang cirebon";
+  String alamat = "Jl. mawar lentera";
+
+  List<String> riwayat = []; // 🔥 tetap list
 
   @override
   Widget build(BuildContext context) {
@@ -113,16 +115,22 @@ class _ProfilePageState extends State<ProfilePage> {
                                                 email: email,
                                                 telp: telp,
                                                 alamat: alamat,
+                                                riwayat: riwayat,
                                               ),
                                             ),
                                           );
 
-                                          if (result != null) {
+                                          /// 🔥 FIX NULL + TYPE
+                                          if (result != null && result is Map) {
                                             setState(() {
-                                              nama = result['nama'];
-                                              email = result['email'];
-                                              telp = result['telp'];
-                                              alamat = result['alamat'];
+                                              nama = result['nama'] ?? nama;
+                                              email = result['email'] ?? email;
+                                              telp = result['telp'] ?? telp;
+                                              alamat = result['alamat'] ?? alamat;
+
+                                              if (result['riwayat'] != null) {
+                                                riwayat = List<String>.from(result['riwayat']);
+                                              }
                                             });
                                           }
                                         },
@@ -168,8 +176,16 @@ class _ProfilePageState extends State<ProfilePage> {
                                 infoField(Icons.phone, telp),
                                 infoField(Icons.location_on, alamat),
 
-                                infoField(Icons.bathtub,
-                                    "Hewan Anda sudah selesai di grooming!"),
+                                const SizedBox(height: 10),
+
+                                /// 🔥 RIWAYAT (SESUAI GAMBAR: TANPA JUDUL)
+                                riwayat.isEmpty
+                                    ? infoField(Icons.bathtub, "Riwayat tidak ada")
+                                    : Column(
+                                        children: riwayat
+                                            .map((item) => infoField(Icons.bathtub, item))
+                                            .toList(),
+                                      ),
                               ],
                             ),
                           )
