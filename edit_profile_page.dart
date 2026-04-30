@@ -8,6 +8,7 @@ class EditProfilePage extends StatefulWidget {
   final String email;
   final String telp;
   final String alamat;
+  final List<String> riwayat;
 
   const EditProfilePage({
     super.key,
@@ -15,6 +16,7 @@ class EditProfilePage extends StatefulWidget {
     required this.email,
     required this.telp,
     required this.alamat,
+    required this.riwayat,
   });
 
   @override
@@ -27,8 +29,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
   late TextEditingController emailC;
   late TextEditingController telpC;
   late TextEditingController alamatC;
+  late TextEditingController riwayatC;
 
-  Uint8List? _image; // 🔥 simpan foto
+  Uint8List? _image;
 
   @override
   void initState() {
@@ -37,18 +40,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
     emailC = TextEditingController(text: widget.email);
     telpC = TextEditingController(text: widget.telp);
     alamatC = TextEditingController(text: widget.alamat);
+
+    /// 🔥 FIX: join lebih rapi
+    riwayatC = TextEditingController(
+      text: widget.riwayat.join(", "),
+    );
   }
 
-  /// 🔥 PILIH FOTO (WEB)
+  /// 🔥 FIX: null safety + aman
   void pickImage() {
     final uploadInput = html.FileUploadInputElement();
     uploadInput.accept = 'image/*';
     uploadInput.click();
 
     uploadInput.onChange.listen((event) {
-      final file = uploadInput.files!.first;
-      final reader = html.FileReader();
+      final file = uploadInput.files?.first;
+      if (file == null) return;
 
+      final reader = html.FileReader();
       reader.readAsArrayBuffer(file);
 
       reader.onLoadEnd.listen((event) {
@@ -83,50 +92,32 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   const SizedBox(height: 20),
 
                   /// HEADER
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () => Navigator.pop(context),
-                          child: const Icon(
-                            Icons.arrow_back,
-                            size: 28,
-                            color: Color(0xff1E3A6F),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back),
+                      ),
+                      const Expanded(
+                        child: Center(
+                          child: Text(
+                            "Edit Profile",
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                        const Spacer(),
-                        const Text(
-                          "Profile",
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xff1E3A6F),
-                          ),
-                        ),
-                        const Spacer(),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 40),
+                    ],
                   ),
 
                   const SizedBox(height: 25),
 
-                  /// 🔥 FOTO PROFILE (SUDAH BISA GANTI)
+                  /// FOTO
                   Stack(
-                    alignment: Alignment.center,
                     children: [
-
-                      Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white,
-                            width: 4,
-                          ),
-                        ),
-                      ),
 
                       CircleAvatar(
                         radius: 55,
@@ -136,23 +127,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
                             : const AssetImage("assets/profile.jpg") as ImageProvider,
                       ),
 
-                      /// 🔥 ICON CAMERA (SUDAH BISA DIKLIK)
                       Positioned(
                         bottom: 0,
-                        right: 5,
+                        right: 0,
                         child: GestureDetector(
-                          onTap: pickImage, // 🔥 INI YANG PENTING
+                          onTap: pickImage,
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: const BoxDecoration(
-                              color: Color(0xffB9C3D4),
+                              color: Colors.grey,
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(
-                              Icons.camera_alt,
-                              size: 16,
-                              color: Colors.black,
-                            ),
+                            child: const Icon(Icons.camera_alt),
                           ),
                         ),
                       ),
@@ -163,46 +149,40 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                   /// FORM
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 25),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
 
-                        label("Nama Lengkap"),
-                        inputField(namaC, "Nama Lengkap"),
+                        input(namaC, "Nama"),
+                        input(emailC, "Email"),
+                        input(telpC, "Telepon"),
+                        input(alamatC, "Alamat"),
 
-                        label("Email"),
-                        inputField(emailC, "Email"),
+                        /// 🔥 RIWAYAT
+                        input(riwayatC, "Riwayat (pisahkan dengan koma)"),
 
-                        label("Nomor Telepon"),
-                        inputField(telpC, "Nomor telepon"),
+                        const SizedBox(height: 20),
 
-                        label("Alamat"),
-                        inputField(alamatC, "Alamat"),
+                        ElevatedButton(
+                          onPressed: () {
 
-                        const SizedBox(height: 30),
+                            /// 🔥 FIX: bersihin spasi & kosong
+                            List<String> hasilRiwayat = riwayatC.text
+                                .split(",")
+                                .map((e) => e.trim())
+                                .where((e) => e.isNotEmpty)
+                                .toList();
 
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xff162D5C),
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                            ),
-                            onPressed: () {
-                              Navigator.pop(context, {
-                                "nama": namaC.text,
-                                "email": emailC.text,
-                                "telp": telpC.text,
-                                "alamat": alamatC.text,
-                                "image": _image,
-                              });
-                            },
-                            child: const Text("Simpan"),
-                          ),
+                            Navigator.pop(context, {
+                              "nama": namaC.text,
+                              "email": emailC.text,
+                              "telp": telpC.text,
+                              "alamat": alamatC.text,
+                              "image": _image,
+                              "riwayat": hasilRiwayat,
+                            });
+                          },
+                          child: const Text("Simpan"),
                         ),
 
                         const SizedBox(height: 20),
@@ -218,31 +198,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  Widget label(String text){
+  Widget input(TextEditingController c, String hint) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-          color: Color(0xff1E3A6F),
-        ),
-      ),
-    );
-  }
-
-  Widget inputField(TextEditingController controller, String hint){
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.only(bottom: 12),
       child: TextField(
-        controller: controller,
+        controller: c,
         decoration: InputDecoration(
           hintText: hint,
           filled: true,
-          fillColor: const Color(0xffE6EAF0),
+          fillColor: Colors.grey[200],
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(25),
             borderSide: BorderSide.none,
           ),
         ),
